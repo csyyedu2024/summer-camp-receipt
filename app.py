@@ -22,21 +22,13 @@ SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuoeRKUfTRl-FF
 @st.cache_data(ttl=30)
 def load_data():
     try:
-        # 強制把總表所有資料先當成「文字」讀取，保護 0 不被吃掉
         df = pd.read_csv(SHEET_CSV_URL, dtype=str)
-        
-        # 清除單引號與空白
         df['家長聯絡電話'] = df['家長聯絡電話'].astype(str).str.replace("'", "").str.strip()
-        
-        # 確保金額可以計算
         df['應繳金額'] = pd.to_numeric(df['應繳金額'], errors='coerce').fillna(0)
         df['實繳金額'] = pd.to_numeric(df['實繳金額'], errors='coerce').fillna(0)
-        
-        # 文字欄位填補空缺，並把半形 $ 換成全形 ＄ 避免網頁隱形
         for col in df.columns:
             if df[col].dtype == 'object':
                 df[col] = df[col].fillna("無").astype(str).str.replace('$', '＄')
-                
         return df
     except Exception as e:
         st.error(f"抓到蟲了，錯誤原因是：{e}")
@@ -84,37 +76,15 @@ if not df.empty:
                     table_html += "</tr>"
                 table_html += "</table>"
                 
+                # 【關鍵修正】這裡開始把所有 HTML 標籤直接靠到最左邊，不留空白，打破程式碼區塊的誤判！
                 receipt_html = f"""
-                <div style="max-width: 800px; margin: auto; border: 1px solid #E6B34A; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
-                    
-                    <div style="background-color: #FFFCF7; padding: 25px; border-bottom: 2px dashed #E6B34A; text-align: center;">
-                        <h2 style="margin: 0; color: #8C6A28; letter-spacing: 2px; font-weight: bold;">🎓 創思優語 課程收據</h2>
-                        <p style="margin: 5px 0 0 0; color: #B08D45; font-size: 14px;">用心陪伴，啟發無限可能</p>
-                    </div>
-                    
-                    <div style="padding: 25px;">
-                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; font-size: 16px; color: #333;">
-                            <div>
-                                <p style="margin: 5px 0;"><strong>👨‍👩‍👧‍👦 家長姓名：</strong> {parent_name}</p>
-                                <p style="margin: 5px 0;"><strong>📞 聯絡電話：</strong> {search_phone}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="margin: 5px 0;"><strong>🎓 學生姓名：</strong> {student_names}</p>
-                            </div>
-                        </div>
-                        
-                        <h4 style="color: #8C6A28; border-left: 4px solid #E6B34A; padding-left: 10px; margin-bottom: 10px;">📋 報名明細</h4>
-                        
-                        {table_html}
-                        
-                        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #E6B34A; text-align: right;">
-                            <span style="font-size: 16px; color: #555;">總計實繳金額：</span>
-                            <span style="font-size: 26px; font-weight: bold; color: #D32F2F;">{total_amount:,} 元</span>
-                        </div>
-                    </div>
-                </div>
-                """
-                
-                st.markdown(receipt_html, unsafe_allow_html=True)
-                
-                st.info("💡 感謝您的報名！若需紙本留存，可直接使用手機截圖，或電腦版瀏覽器的「列印」功能（Ctrl+P 或 Cmd+P）將本頁儲存為 PDF。")
+<div style="max-width: 800px; margin: auto; border: 1px solid #E6B34A; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
+    <div style="background-color: #FFFCF7; padding: 25px; border-bottom: 2px dashed #E6B34A; text-align: center;">
+        <h2 style="margin: 0; color: #8C6A28; letter-spacing: 2px; font-weight: bold;">🎓 創思優語 課程收據</h2>
+        <p style="margin: 5px 0 0 0; color: #B08D45; font-size: 14px;">用心陪伴，啟發無限可能</p>
+    </div>
+    <div style="padding: 25px;">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; font-size: 16px; color: #333;">
+            <div>
+                <p style="margin: 5px 0;"><strong>👨‍👩‍👧‍👦 家長姓名：</strong> {parent_name}</p>
+                <p style="margin: 5px 0;"><strong>📞 聯絡電話：</strong> {search_
