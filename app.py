@@ -82,3 +82,43 @@ if not df.empty:
                     table_html += f"<td style='padding: 10px;'>{int(row['應繳金額']):,}</td>"
                     table_html += f"<td style='padding: 10px;'>{row['優惠內容']}</td>"
                     table_html += f"<td style='padding: 10px;'>{int(row['實繳金額']):,}</td>"
+                    table_html += f"<td style='padding: 10px;'>{row['繳費狀態']}</td>"
+                    table_html += "</tr>"
+                table_html += "</table>"
+                
+                # 組裝整張收據卡片的 HTML
+                receipt_html = f"""
+                <div style="max-width: 800px; margin: auto; border: 1px solid #E6B34A; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
+                    
+                    <div style="background-color: #FFFCF7; padding: 25px; border-bottom: 2px dashed #E6B34A; text-align: center;">
+                        <h2 style="margin: 0; color: #8C6A28; letter-spacing: 2px; font-weight: bold;">🎓 創思優語 課程收據</h2>
+                        <p style="margin: 5px 0 0 0; color: #B08D45; font-size: 14px;">用心陪伴，啟發無限可能</p>
+                    </div>
+                    
+                    <div style="padding: 25px;">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; font-size: 16px; color: #333;">
+                            <div>
+                                <p style="margin: 5px 0;"><strong>👨‍👩‍👧‍👦 家長姓名：</strong> {parent_name}</p>
+                                <p style="margin: 5px 0;"><strong>📞 聯絡電話：</strong> {search_phone}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="margin: 5px 0;"><strong>🎓 學生姓名：</strong> {student_names}</p>
+                            </div>
+                        </div>
+                        
+                        <h4 style="color: #8C6A28; border-left: 4px solid #E6B34A; padding-left: 10px; margin-bottom: 10px;">📋 報名明細</h4>
+                        
+                        {table_html}
+                        
+                        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #E6B34A; text-align: right;">
+                            <span style="font-size: 16px; color: #555;">總計實繳金額：</span>
+                            <span style="font-size: 26px; font-weight: bold; color: #D32F2F;">NT$ {total_amount:,}</span>
+                        </div>
+                    </div>
+                </div>
+                """
+                
+                # 渲染到畫面上
+                st.markdown(receipt_html, unsafe_allow_html=True)
+                
+                st.info("💡 感謝您的報名！若需紙本留存，可直接使用手機截圖，或電腦版瀏覽器的「列印」功能（Ctrl+P 或 Cmd+P）將本頁儲存為 PDF。")
