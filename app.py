@@ -2,15 +2,44 @@ import streamlit as st
 import pandas as pd
 
 # ==========================
-# 1. 網頁基本設定
+# 1. 網頁基本設定與自訂樣式 (CSS)
 # ==========================
 st.set_page_config(
-    page_title="創思優語 | 營隊收據查詢系統",
+    page_title="創思優語 | 營隊課程明細查詢",
     page_icon="🎓",
     layout="centered"
 )
 
-st.title("🎓 創思優語 - 營隊收據查詢")
+# 【全新魔法】加入自訂 CSS 來放大輸入框與按鈕，提升手機版使用者體驗
+st.markdown(
+    """
+    <style>
+    /* 放大輸入框上方的提示文字 */
+    div[data-testid="stTextInput"] label p {
+        font-size: 20px !important;
+        font-weight: bold !important;
+        color: #485C6E !important;
+    }
+    /* 放大輸入框本身與打字進去的文字 */
+    div[data-testid="stTextInput"] input {
+        font-size: 22px !important;
+        padding: 15px !important;
+    }
+    /* 放大查詢按鈕與裡面的文字 */
+    div[data-testid="stButton"] button {
+        height: auto !important;
+        padding: 10px 24px !important;
+    }
+    div[data-testid="stButton"] button p {
+        font-size: 20px !important;
+        font-weight: bold !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.title("🎓 創思優語 - 營隊明細查詢")
 st.write("請輸入家長聯絡電話，系統將自動為您整併同戶手足的報名明細。")
 st.markdown("---")
 
@@ -26,9 +55,14 @@ def load_data():
         df['家長聯絡電話'] = df['家長聯絡電話'].astype(str).str.replace("'", "").str.strip()
         df['應繳金額'] = pd.to_numeric(df['應繳金額'], errors='coerce').fillna(0)
         df['實繳金額'] = pd.to_numeric(df['實繳金額'], errors='coerce').fillna(0)
+        
+        # 填補空值，並徹底消滅 nan
+        df = df.fillna("無")
+        df = df.replace(["nan", "NaN", "None"], "無")
+        
         for col in df.columns:
             if df[col].dtype == 'object':
-                df[col] = df[col].fillna("無").astype(str).str.replace('$', '＄')
+                df[col] = df[col].astype(str).str.replace('$', '＄')
         return df
     except Exception as e:
         st.error(f"抓到蟲了，錯誤原因是：{e}")
@@ -42,7 +76,7 @@ df = load_data()
 if not df.empty:
     search_phone = st.text_input("🔍 請輸入家長聯絡電話 (例如：0912345678)：", max_chars=15)
     
-    if st.button("查詢收據", type="primary"):
+    if st.button("查詢明細", type="primary"):
         if search_phone:
             user_data = df[df['家長聯絡電話'] == search_phone.strip()]
             
@@ -53,15 +87,15 @@ if not df.empty:
                 student_names = "、".join(user_data['學生姓名'].astype(str).unique())
                 total_amount = int(user_data['實繳金額'].sum())
                 
-                st.success("查詢成功！以下是您的專屬收據：")
+                st.success("查詢成功！以下是您的專屬明細：")
                 
                 # ==========================
-                # 4. 渲染一體成型的高質感收據 (全 HTML)
+                # 4. 渲染一體成型的高質感收據 (莫蘭迪藍配色)
                 # ==========================
                 display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
                 
                 table_html = "<table style='width:100%; border-collapse: collapse; text-align: left; font-size: 14px; margin-top: 15px;'>"
-                table_html += "<tr style='background-color: #F8F1E4; color: #8C6A28; border-bottom: 2px solid #E6B34A;'>"
+                table_html += "<tr style='background-color: #EAEFF3; color: #485C6E; border-bottom: 2px solid #7B90A7;'>"
                 table_html += "<th style='padding: 10px;'>學生姓名</th><th style='padding: 10px;'>營隊名稱</th><th style='padding: 10px;'>應繳金額</th><th style='padding: 10px;'>優惠內容</th><th style='padding: 10px;'>實繳金額</th><th style='padding: 10px;'>繳費狀態</th>"
                 table_html += "</tr>"
                 
@@ -76,12 +110,11 @@ if not df.empty:
                     table_html += "</tr>"
                 table_html += "</table>"
                 
-                # 【關鍵修正】這裡開始把所有 HTML 標籤直接靠到最左邊，不留空白，打破程式碼區塊的誤判！
                 receipt_html = f"""
-<div style="max-width: 800px; margin: auto; border: 1px solid #E6B34A; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
-    <div style="background-color: #FFFCF7; padding: 25px; border-bottom: 2px dashed #E6B34A; text-align: center;">
-        <h2 style="margin: 0; color: #8C6A28; letter-spacing: 2px; font-weight: bold;">🎓 創思優語 課程收據</h2>
-        <p style="margin: 5px 0 0 0; color: #B08D45; font-size: 14px;">用心陪伴，啟發無限可能</p>
+<div style="max-width: 800px; margin: auto; border: 1px solid #7B90A7; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
+    <div style="background-color: #F3F6F8; padding: 25px; border-bottom: 2px dashed #7B90A7; text-align: center;">
+        <h2 style="margin: 0; color: #485C6E; letter-spacing: 2px; font-weight: bold;">🎓 創思優語 營隊課程明細</h2>
+        <p style="margin: 5px 0 0 0; color: #6B8296; font-size: 14px;">用心陪伴，啟發無限可能</p>
     </div>
     <div style="padding: 25px;">
         <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; font-size: 16px; color: #333;">
@@ -93,9 +126,9 @@ if not df.empty:
                 <p style="margin: 5px 0;"><strong>🎓 學生姓名：</strong> {student_names}</p>
             </div>
         </div>
-        <h4 style="color: #8C6A28; border-left: 4px solid #E6B34A; padding-left: 10px; margin-bottom: 10px;">📋 報名明細</h4>
+        <h4 style="color: #485C6E; border-left: 4px solid #7B90A7; padding-left: 10px; margin-bottom: 10px;">📋 報名明細</h4>
         {table_html}
-        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #E6B34A; text-align: right;">
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #7B90A7; text-align: right;">
             <span style="font-size: 16px; color: #555;">總計實繳金額：</span>
             <span style="font-size: 26px; font-weight: bold; color: #D32F2F;">{total_amount:,} 元</span>
         </div>
