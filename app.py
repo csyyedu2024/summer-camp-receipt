@@ -206,3 +206,7 @@ if not df.empty:
                                         ws.update_cell(r, col_idx, f"'{five_digits.strip()}")
                                         
                                     st.success("🎉 回報成功！已為您寫入系統，行政人員將會盡快為您對帳。")
+                                    # 清除快取，讓下次重新整理時抓到最新資料
+                                    st.cache_data.clear()
+                            except Exception as e:
+                                st.error(f"寫入失敗，請稍後再試或截圖聯繫行政。詳細錯誤：{e}")
