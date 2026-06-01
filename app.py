@@ -10,7 +10,6 @@ st.set_page_config(
     layout="centered"
 )
 
-# 【全新魔法】加入自訂 CSS 來放大輸入框與按鈕，提升手機版使用者體驗
 st.markdown(
     """
     <style>
@@ -90,23 +89,30 @@ if not df.empty:
                 st.success("查詢成功！以下是您的專屬明細：")
                 
                 # ==========================
-                # 4. 渲染一體成型的高質感收據 (莫蘭迪藍配色)
+                # 4. 渲染一體成型的高質感收據 (莫蘭迪藍 + 排版優化)
                 # ==========================
                 display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
                 
                 table_html = "<table style='width:100%; border-collapse: collapse; text-align: left; font-size: 14px; margin-top: 15px;'>"
                 table_html += "<tr style='background-color: #EAEFF3; color: #485C6E; border-bottom: 2px solid #7B90A7;'>"
-                table_html += "<th style='padding: 10px;'>學生姓名</th><th style='padding: 10px;'>營隊名稱</th><th style='padding: 10px;'>應繳金額</th><th style='padding: 10px;'>優惠內容</th><th style='padding: 10px;'>實繳金額</th><th style='padding: 10px;'>繳費狀態</th>"
+                # 【排版優化】設定標題不換行、強制斷行與置中
+                table_html += "<th style='padding: 10px; white-space: nowrap;'>學生姓名</th>"
+                table_html += "<th style='padding: 10px;'>營隊名稱</th>"
+                table_html += "<th style='padding: 10px; white-space: nowrap; text-align: center;'>應繳<br>金額</th>"
+                table_html += "<th style='padding: 10px;'>優惠內容</th>"
+                table_html += "<th style='padding: 10px; white-space: nowrap; text-align: center;'>實繳<br>金額</th>"
+                table_html += "<th style='padding: 10px; white-space: nowrap; text-align: center;'>繳費<br>狀態</th>"
                 table_html += "</tr>"
                 
                 for index, row in display_df.iterrows():
                     table_html += "<tr style='border-bottom: 1px solid #EEEEEE; color: #444444;'>"
-                    table_html += f"<td style='padding: 10px;'>{row['學生姓名']}</td>"
+                    # 【排版優化】學生姓名加上 white-space: nowrap 確保不斷行；數字與狀態置中對齊
+                    table_html += f"<td style='padding: 10px; white-space: nowrap;'>{row['學生姓名']}</td>"
                     table_html += f"<td style='padding: 10px;'>{row['營隊名稱']}</td>"
-                    table_html += f"<td style='padding: 10px;'>{int(row['應繳金額']):,}</td>"
+                    table_html += f"<td style='padding: 10px; text-align: center;'>{int(row['應繳金額']):,}</td>"
                     table_html += f"<td style='padding: 10px;'>{row['優惠內容']}</td>"
-                    table_html += f"<td style='padding: 10px;'>{int(row['實繳金額']):,}</td>"
-                    table_html += f"<td style='padding: 10px;'>{row['繳費狀態']}</td>"
+                    table_html += f"<td style='padding: 10px; text-align: center;'>{int(row['實繳金額']):,}</td>"
+                    table_html += f"<td style='padding: 10px; text-align: center;'>{row['繳費狀態']}</td>"
                     table_html += "</tr>"
                 table_html += "</table>"
                 
