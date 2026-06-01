@@ -20,11 +20,14 @@ st.markdown("---")
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuoeRKUfTRl-FFQrVLw42y3yD_kJfXutXDgRFQOGh7aSy_fs9iQGwy5Fz_eY4XSX7TINvBRJSLmkrv/pub?gid=56127787&single=true&output=csv"
 
 @st.cache_data(ttl=30) # 快取 30 秒，您更新總表後，網頁最慢 30 秒內會更新
+@st.cache_data(ttl=30) # 快取 30 秒，您更新總表後，網頁最慢 30 秒內會更新
 def load_data():
     try:
-        df = pd.read_csv(SHEET_CSV_URL)
-        # 確保電話欄位是字串，避免 0912 變成 912
-        df['家長聯絡電話'] = df['家長聯絡電話'].astype(str).str.strip()
+        # 【抓蟲修改 1】強制把總表所有資料先當成「文字」讀取，保護 09 開頭的 0 絕對不會被吃掉
+        df = pd.read_csv(SHEET_CSV_URL, dtype=str)
+        
+        # 【抓蟲修改 2】清除可能從 Google 表單偷渡過來的單引號 (') 以及多餘空白
+        df['家長聯絡電話'] = df['家長聯絡電話'].astype(str).str.replace("'", "").str.strip()
         
         # 確保金額可以計算，轉為數值格式並將空白補 0
         df['應繳金額'] = pd.to_numeric(df['應繳金額'], errors='coerce').fillna(0)
