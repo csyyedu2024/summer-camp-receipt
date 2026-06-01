@@ -32,10 +32,10 @@ def load_data():
         df['應繳金額'] = pd.to_numeric(df['應繳金額'], errors='coerce').fillna(0)
         df['實繳金額'] = pd.to_numeric(df['實繳金額'], errors='coerce').fillna(0)
         
-        # 文字欄位填補空缺
+        # 文字欄位填補空缺，並把半形 $ 換成全形 ＄ 避免網頁隱形
         for col in df.columns:
             if df[col].dtype == 'object':
-                df[col] = df[col].fillna("無")
+                df[col] = df[col].fillna("無").astype(str).str.replace('$', '＄')
                 
         return df
     except Exception as e:
@@ -52,7 +52,6 @@ if not df.empty:
     
     if st.button("查詢收據", type="primary"):
         if search_phone:
-            # 篩選符合電話的資料
             user_data = df[df['家長聯絡電話'] == search_phone.strip()]
             
             if user_data.empty:
@@ -69,7 +68,6 @@ if not df.empty:
                 # ==========================
                 display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
                 
-                # 動態生成明細表格的 HTML
                 table_html = "<table style='width:100%; border-collapse: collapse; text-align: left; font-size: 14px; margin-top: 15px;'>"
                 table_html += "<tr style='background-color: #F8F1E4; color: #8C6A28; border-bottom: 2px solid #E6B34A;'>"
                 table_html += "<th style='padding: 10px;'>學生姓名</th><th style='padding: 10px;'>營隊名稱</th><th style='padding: 10px;'>應繳金額</th><th style='padding: 10px;'>優惠內容</th><th style='padding: 10px;'>實繳金額</th><th style='padding: 10px;'>繳費狀態</th>"
@@ -86,7 +84,6 @@ if not df.empty:
                     table_html += "</tr>"
                 table_html += "</table>"
                 
-                # 組裝整張收據卡片的 HTML
                 receipt_html = f"""
                 <div style="max-width: 800px; margin: auto; border: 1px solid #E6B34A; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
                     
@@ -112,13 +109,12 @@ if not df.empty:
                         
                         <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #E6B34A; text-align: right;">
                             <span style="font-size: 16px; color: #555;">總計實繳金額：</span>
-                            <span style="font-size: 26px; font-weight: bold; color: #D32F2F;">NT$ {total_amount:,}</span>
+                            <span style="font-size: 26px; font-weight: bold; color: #D32F2F;">{total_amount:,} 元</span>
                         </div>
                     </div>
                 </div>
                 """
                 
-                # 渲染到畫面上
                 st.markdown(receipt_html, unsafe_allow_html=True)
                 
                 st.info("💡 感謝您的報名！若需紙本留存，可直接使用手機截圖，或電腦版瀏覽器的「列印」功能（Ctrl+P 或 Cmd+P）將本頁儲存為 PDF。")
