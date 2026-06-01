@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import json
 import gspread
+# 【新增】匯入時間工具
+from datetime import datetime, timedelta
 
 # ==========================
 # 1. 網頁基本設定與自訂樣式 (CSS)
@@ -57,7 +59,6 @@ def load_data():
     try:
         gc = get_gspread_client()
         sh = gc.open_by_url(SHEET_URL)
-        # 這裡如果您有用方法二改過分頁名稱，請記得改回來，例如 ws = sh.worksheet("您的分頁名稱")
         ws = sh.sheet1
         data = ws.get_all_values()
         
@@ -132,7 +133,6 @@ if not df.empty:
                     table_html += "</tr>"
                 table_html += "</table>"
                 
-                # 【終極防護】把這裡的 HTML 全部靠最左邊，絕對不能有任何縮排，打破 Streamlit 的程式碼區塊魔咒！
                 receipt_html = f"""
 <div style="max-width: 800px; margin: auto; border: 1px solid #7B90A7; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
     <div style="background-color: #F3F6F8; padding: 25px; border-bottom: 2px dashed #7B90A7; text-align: center;">
@@ -191,14 +191,21 @@ if not df.empty:
                                     sheet_headers = ws.row_values(1)
                                     clean_headers = [str(h).strip() for h in sheet_headers]
                                     
-                                    if "匯款後五碼" not in clean_headers:
-                                        st.error("⚠️ 寫入失敗！請確認您的 Google 總表第一列有「匯款後五碼」這個標題。")
+                                    # 【新增防護】檢查兩個欄位是不是都準備好了
+                                    if "匯款後五碼" not in clean_headers or "回報時間" not in clean_headers:
+                                        st.error("⚠️ 寫入失敗！請確認總表第一列有「匯款後五碼」和「回報時間」這兩個標題。")
                                     else:
-                                        col_idx = clean_headers.index("匯款後五碼") + 1
+                                        col_idx_5digits = clean_headers.index("匯款後五碼") + 1
+                                        col_idx_time = clean_headers.index("回報時間") + 1
                                         rows_to_update = user_data['真實列數'].tolist()
                                         
+                                        # 【新增】抓取當下的台灣時間 (UTC+8)
+                                        tw_time = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+                                        
+                                        # 依序寫入兩個欄位
                                         for r in rows_to_update:
-                                            ws.update_cell(r, col_idx, f"'{five_digits.strip()}")
+                                            ws.update_cell(r, col_idx_5digits, f"'{five_digits.strip()}")
+                                            ws.update_cell(r, col_idx_time, tw_time)
                                             
                                         st.success("🎉 回報成功！已為您寫入系統，行政人員將會盡快為您對帳。")
                                         st.cache_data.clear()
