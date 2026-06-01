@@ -87,4 +87,22 @@ if not df.empty:
         <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; font-size: 16px; color: #333;">
             <div>
                 <p style="margin: 5px 0;"><strong>👨‍👩‍👧‍👦 家長姓名：</strong> {parent_name}</p>
-                <p style="margin: 5px 0;"><strong>📞 聯絡電話：</strong> {search_
+                <p style="margin: 5px 0;"><strong>📞 聯絡電話：</strong> {search_phone}</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="margin: 5px 0;"><strong>🎓 學生姓名：</strong> {student_names}</p>
+            </div>
+        </div>
+        <h4 style="color: #8C6A28; border-left: 4px solid #E6B34A; padding-left: 10px; margin-bottom: 10px;">📋 報名明細</h4>
+        {table_html}
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #E6B34A; text-align: right;">
+            <span style="font-size: 16px; color: #555;">總計實繳金額：</span>
+            <span style="font-size: 26px; font-weight: bold; color: #D32F2F;">{total_amount:,} 元</span>
+        </div>
+    </div>
+</div>
+"""
+                
+                st.markdown(receipt_html, unsafe_allow_html=True)
+                
+                st.info("💡 感謝您的報名！若需紙本留存，可直接使用手機截圖，或電腦版瀏覽器的「列印」功能（Ctrl+P 或 Cmd+P）將本頁儲存為 PDF。")
