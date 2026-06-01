@@ -81,4 +81,4 @@ if not df.empty:
                 """, unsafe_allow_html=True)
                 
                 # 顯示明細表格 (只挑選家長核對需要的欄位，隱藏內部行政欄位)
-                display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳
+               display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
