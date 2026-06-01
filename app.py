@@ -17,20 +17,24 @@ st.markdown("---")
 # ==========================
 # 2. 讀取 Google Sheet 資料
 # ==========================
-# ⚠️ 請將下方的網址替換成您剛剛「發佈到網路」的 CSV 連結
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuoeRKUfTRl-FFQrVLw42y3yD_kJfXutXDgRFQOGh7aSy_fs9iQGwy5Fz_eY4XSX7TINvBRJSLmkrv/pub?gid=56127787&single=true&output=csv"
 
-@st.cache_data(ttl=30) # 快取 30 秒，家老更新總表後，網頁最慢 30 秒內會更新
+@st.cache_data(ttl=30) # 快取 30 秒，您更新總表後，網頁最慢 30 秒內會更新
 def load_data():
     try:
         df = pd.read_csv(SHEET_CSV_URL)
         # 確保電話欄位是字串，避免 0912 變成 912
         df['家長聯絡電話'] = df['家長聯絡電話'].astype(str).str.strip()
+        
         # 確保金額可以計算，轉為數值格式並將空白補 0
         df['應繳金額'] = pd.to_numeric(df['應繳金額'], errors='coerce').fillna(0)
         df['實繳金額'] = pd.to_numeric(df['實繳金額'], errors='coerce').fillna(0)
-        # 填補空值以防報錯
-        df.fillna("無", inplace=True)
+        
+        # 針對文字欄位填補「無」，放過數字欄位避免報錯
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                df[col] = df[col].fillna("無")
+                
         return df
     except Exception as e:
         st.error(f"抓到蟲了，錯誤原因是：{e}")
@@ -77,14 +81,4 @@ if not df.empty:
                 """, unsafe_allow_html=True)
                 
                 # 顯示明細表格 (只挑選家長核對需要的欄位，隱藏內部行政欄位)
-                display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
-                st.table(display_df)
-                
-                # 顯示總計與付款資訊
-                st.markdown(f"""
-                <div style="text-align: right; font-size: 22px; color: #D32F2F; padding: 10px; border-bottom: 2px solid #E6B34A;">
-                    <strong>總計實繳金額： NT$ {total_amount:,}</strong>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.info("💡 感謝您的報名！若需紙本留存，可直接使用瀏覽器的「列印」功能（Ctrl+P 或 Cmd+P）將本頁儲存為 PDF。")
+                display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳
