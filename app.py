@@ -33,7 +33,7 @@ def load_data():
         df.fillna("無", inplace=True)
         return df
     except Exception as e:
-        st.error("資料庫連線失敗，請檢查 Google Sheet 網址是否正確。")
+        st.error(f"抓到蟲了，錯誤原因是：{e}")
         return pd.DataFrame()
 
 df = load_data()
