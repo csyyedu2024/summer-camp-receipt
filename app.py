@@ -19,21 +19,20 @@ st.markdown("---")
 # ==========================
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuoeRKUfTRl-FFQrVLw42y3yD_kJfXutXDgRFQOGh7aSy_fs9iQGwy5Fz_eY4XSX7TINvBRJSLmkrv/pub?gid=56127787&single=true&output=csv"
 
-@st.cache_data(ttl=30) # 快取 30 秒，您更新總表後，網頁最慢 30 秒內會更新
-@st.cache_data(ttl=30) # 快取 30 秒，您更新總表後，網頁最慢 30 秒內會更新
+@st.cache_data(ttl=30)
 def load_data():
     try:
-        # 【抓蟲修改 1】強制把總表所有資料先當成「文字」讀取，保護 09 開頭的 0 絕對不會被吃掉
+        # 強制把總表所有資料先當成「文字」讀取，保護 0 不被吃掉
         df = pd.read_csv(SHEET_CSV_URL, dtype=str)
         
-        # 【抓蟲修改 2】清除可能從 Google 表單偷渡過來的單引號 (') 以及多餘空白
+        # 清除單引號與空白
         df['家長聯絡電話'] = df['家長聯絡電話'].astype(str).str.replace("'", "").str.strip()
         
-        # 確保金額可以計算，轉為數值格式並將空白補 0
+        # 確保金額可以計算
         df['應繳金額'] = pd.to_numeric(df['應繳金額'], errors='coerce').fillna(0)
         df['實繳金額'] = pd.to_numeric(df['實繳金額'], errors='coerce').fillna(0)
         
-        # 針對文字欄位填補「無」，放過數字欄位避免報錯
+        # 文字欄位填補空缺
         for col in df.columns:
             if df[col].dtype == 'object':
                 df[col] = df[col].fillna("無")
@@ -59,30 +58,27 @@ if not df.empty:
             if user_data.empty:
                 st.warning("找不到此電話的報名紀錄，請確認號碼是否輸入正確，或聯繫行政人員。")
             else:
-                # 抓取基本資料 (取第一筆紀錄的家長姓名)
                 parent_name = user_data['家長姓名'].iloc[0]
-                # 收集所有出現過的學生姓名 (自動去重複，例如手足名字會變成「王大寶、王小寶」)
                 student_names = "、".join(user_data['學生姓名'].astype(str).unique())
-                # 計算總計實繳金額
                 total_amount = int(user_data['實繳金額'].sum())
                 
                 st.success("查詢成功！以下是您的專屬收據：")
                 
                 # ==========================
-                # 4. 渲染收據畫面 (HTML/CSS 增加品牌質感)
+                # 4. 渲染一體成型的高質感收據 (全 HTML)
                 # ==========================
-                st.markdown(f"""
-                <div style="border: 2px solid #E6B34A; border-radius: 10px; padding: 20px; background-color: #FFFCF7;">
-                    <h2 style="text-align: center; color: #8C6A28; letter-spacing: 2px;">創思優語 課程收據</h2>
-                    <hr style="border-top: 1px dashed #E6B34A;">
-                    <p style="font-size: 16px;"><strong>👨‍👩‍👧‍👦 家長姓名：</strong> {parent_name}</p>
-                    <p style="font-size: 16px;"><strong>🎓 學生姓名：</strong> {student_names}</p>
-                    <p style="font-size: 16px;"><strong>📞 聯絡電話：</strong> {search_phone}</p>
-                    <br>
-                    <h4 style="color: #8C6A28;">📋 報名明細：</h4>
-                </div>
-                """, unsafe_allow_html=True)
-                
-# 顯示明細表格 (只挑選家長核對需要的欄位，隱藏內部行政欄位)
                 display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
-                st.table(display_df)
+                
+                # 動態生成明細表格的 HTML
+                table_html = "<table style='width:100%; border-collapse: collapse; text-align: left; font-size: 14px; margin-top: 15px;'>"
+                table_html += "<tr style='background-color: #F8F1E4; color: #8C6A28; border-bottom: 2px solid #E6B34A;'>"
+                table_html += "<th style='padding: 10px;'>學生姓名</th><th style='padding: 10px;'>營隊名稱</th><th style='padding: 10px;'>應繳金額</th><th style='padding: 10px;'>優惠內容</th><th style='padding: 10px;'>實繳金額</th><th style='padding: 10px;'>繳費狀態</th>"
+                table_html += "</tr>"
+                
+                for index, row in display_df.iterrows():
+                    table_html += "<tr style='border-bottom: 1px solid #EEEEEE; color: #444444;'>"
+                    table_html += f"<td style='padding: 10px;'>{row['學生姓名']}</td>"
+                    table_html += f"<td style='padding: 10px;'>{row['營隊名稱']}</td>"
+                    table_html += f"<td style='padding: 10px;'>{int(row['應繳金額']):,}</td>"
+                    table_html += f"<td style='padding: 10px;'>{row['優惠內容']}</td>"
+                    table_html += f"<td style='padding: 10px;'>{int(row['實繳金額']):,}</td>"
