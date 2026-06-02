@@ -159,9 +159,9 @@ if not df.empty:
     <div style="background-color: #F8F9FA; padding: 20px 25px; border-top: 2px dashed #7B90A7;">
         <h4 style="color: #485C6E; margin-top: 0; margin-bottom: 15px;">🏦 匯款資訊</h4>
         <div style="font-size: 16px; color: #444; line-height: 1.6;">
-            <p style="margin: 0;"><strong>銀行代碼：</strong>808 (玉山銀行) </p>
-            <p style="margin: 0;"><strong>匯款帳號：</strong>1234-5678-90123</p>
-            <p style="margin: 0;"><strong>戶　　名：</strong>創思優語教育有限公司</p>
+            <p style="margin: 0;"><strong>銀行代碼：</strong>807 (永豐銀行) </p>
+            <p style="margin: 0;"><strong>匯款帳號：</strong>007-018-0005798-6</p>
+            <p style="margin: 0;"><strong>戶　　名：</strong>創思優語有限公司</p>
         </div>
     </div>
 </div>
