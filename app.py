@@ -181,9 +181,9 @@ if not df.empty:
     <div style="background-color: #F8F9FA; padding: 20px 25px; border-top: 2px dashed #7B90A7;">
         <h4 style="color: #485C6E; margin-top: 0; margin-bottom: 15px;">🏦 匯款資訊</h4>
         <div style="font-size: 16px; color: #444; line-height: 1.6;">
-            <p style="margin: 0;"><strong>銀行代碼：</strong>807 (永豐銀行) </p>
-            <p style="margin: 0;"><strong>匯款帳號：</strong>007-018-0005798-6</p>
-            <p style="margin: 0;"><strong>戶　　名：</strong>創思優語有限公司</p>
+            <p style="margin: 0;"><strong>銀行代碼：</strong>808 (玉山銀行) </p>
+            <p style="margin: 0;"><strong>匯款帳號：</strong>1234-5678-90123</p>
+            <p style="margin: 0;"><strong>戶　　名：</strong>創思優語教育有限公司</p>
         </div>
     </div>
 </div>
@@ -191,7 +191,7 @@ if not df.empty:
                 st.markdown(receipt_html, unsafe_allow_html=True)
                 
                 # ==========================
-                # 4. 繳費回報表單 (寫入 Google Sheet + Messaging API 推播)
+                # 4. 繳費回報表單
                 # ==========================
                 st.markdown("### 💳 繳費回報")
                 st.info("若您已完成匯款，請於下方輸入帳號後五碼，系統將自動為您登記。")
@@ -228,8 +228,8 @@ if not df.empty:
                                             ws.update_cell(r, col_idx_time, tw_time)
                                             ws.update_cell(r, col_idx_status, "待確認")
                                         
-                                        # 【進化版】改用 LINE Messaging API 發送通知給指定 User ID
-                                        if "BZwVsMVgIlm4YvIDi8hKV02IkfFALUHy1JD8Zrzu3eMB1V5t9/bdByyqiVV/EtrJi1lLEdLY3mm3jDl3AGrtQPCFWoJ2r2fMSmj4UtagfwnMY0E5odfgVbxhmchIw8ioBW7dqA5v4QZ3sv5WudVkEwdB04t89/1O/w1cDnyilFU=" in st.secrets and "U3d9ed36c795702b1ea4c66b4b2852f97" in st.secrets:
+                                        # 【錯誤偵測器】檢查 LINE 推播狀態
+                                        if "LINE_CHANNEL_TOKEN" in st.secrets and "LINE_USER_ID" in st.secrets:
                                             try:
                                                 line_token = st.secrets["LINE_CHANNEL_TOKEN"]
                                                 line_user_id = st.secrets["LINE_USER_ID"]
@@ -251,9 +251,16 @@ if not df.empty:
                                                     "to": line_user_id,
                                                     "messages": [{"type": "text", "text": line_message}]
                                                 }
-                                                requests.post(line_url, headers=line_headers, json=line_payload)
+                                                res = requests.post(line_url, headers=line_headers, json=line_payload)
+                                                
+                                                # 如果 LINE 官方拒絕發送，把原因吐出來！
+                                                if res.status_code != 200:
+                                                    st.warning(f"⚠️ LINE 通知發送失敗 (錯誤碼 {res.status_code})：{res.text}")
+                                                    
                                             except Exception as line_err:
-                                                pass
+                                                st.warning(f"⚠️ LINE 系統連線發生錯誤：{line_err}")
+                                        else:
+                                            st.warning("⚠️ 找不到 LINE 的金鑰，請確認 Streamlit Secrets 是否有設定正確。")
                                             
                                         st.success("🎉 回報成功！已為您寫入系統，行政人員將會盡快為您對帳。")
                                         st.cache_data.clear()
