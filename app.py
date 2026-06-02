@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import gspread
 from datetime import datetime, timedelta
+import requests
 
 # ==========================
 # 1. 網頁基本設定與自訂樣式 (CSS)
@@ -33,7 +34,6 @@ st.markdown(
         font-size: 20px !important;
         font-weight: bold !important;
     }
-    /* 隱藏預設的滾動條，讓手機滑動更順暢美觀 */
     ::-webkit-scrollbar {
         height: 6px;
     }
@@ -53,7 +53,6 @@ st.markdown("---")
 # ==========================
 # 2. 連線 Google Sheet 與讀取資料
 # ==========================
-# ⚠️ 【重要】請將下方替換成您總表「真實的網址」(帶有 /edit 的那串)
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1d1H1ofnf2NS0EJf5eaDH6XrmPT0k9tvk_7jwKjlPUtE/edit?resourcekey=&gid=56127787#gid=56127787"
 
 @st.cache_resource
@@ -122,7 +121,6 @@ if not df.empty:
                 
                 display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
                 
-                # 【排版優化】加上 overflow-x: auto 讓手機可以左右滑動，並設定 min-width 確保文字不會被壓扁
                 table_html = "<div style='overflow-x: auto; padding-bottom: 10px; margin-top: 15px;'>"
                 table_html += "<table style='width:100%; min-width: 650px; border-collapse: collapse; text-align: left; font-size: 14px;'>"
                 table_html += "<tr style='background-color: #EAEFF3; color: #485C6E; border-bottom: 2px solid #7B90A7;'>"
@@ -193,7 +191,7 @@ if not df.empty:
                 st.markdown(receipt_html, unsafe_allow_html=True)
                 
                 # ==========================
-                # 4. 繳費回報表單 (寫入 Google Sheet)
+                # 4. 繳費回報表單 (寫入 Google Sheet + Messaging API 推播)
                 # ==========================
                 st.markdown("### 💳 繳費回報")
                 st.info("若您已完成匯款，請於下方輸入帳號後五碼，系統將自動為您登記。")
@@ -206,7 +204,7 @@ if not df.empty:
                         if len(five_digits.strip()) < 4:
                             st.error("⚠️ 請輸入完整的後五碼！")
                         else:
-                            with st.spinner("系統正在將資料寫入總表，請稍候..."):
+                            with st.spinner("系統正在處理中，請稍候..."):
                                 try:
                                     gc = get_gspread_client()
                                     sh = gc.open_by_url(SHEET_URL)
@@ -229,6 +227,33 @@ if not df.empty:
                                             ws.update_cell(r, col_idx_5digits, f"'{five_digits.strip()}")
                                             ws.update_cell(r, col_idx_time, tw_time)
                                             ws.update_cell(r, col_idx_status, "待確認")
+                                        
+                                        # 【進化版】改用 LINE Messaging API 發送通知給指定 User ID
+                                        if "BZwVsMVgIlm4YvIDi8hKV02IkfFALUHy1JD8Zrzu3eMB1V5t9/bdByyqiVV/EtrJi1lLEdLY3mm3jDl3AGrtQPCFWoJ2r2fMSmj4UtagfwnMY0E5odfgVbxhmchIw8ioBW7dqA5v4QZ3sv5WudVkEwdB04t89/1O/w1cDnyilFU=" in st.secrets and "U3d9ed36c795702b1ea4c66b4b2852f97" in st.secrets:
+                                            try:
+                                                line_token = st.secrets["LINE_CHANNEL_TOKEN"]
+                                                line_user_id = st.secrets["LINE_USER_ID"]
+                                                line_url = "https://api.line.me/v2/bot/message/push"
+                                                line_headers = {
+                                                    "Authorization": f"Bearer {line_token}",
+                                                    "Content-Type": "application/json"
+                                                }
+                                                line_message = (
+                                                    f"🔔 【收到營隊學費回報！】\n"
+                                                    f"👨‍👩‍👧‍👦 家長姓名：{parent_name}\n"
+                                                    f"📞 聯絡電話：{search_phone}\n"
+                                                    f"🎓 學生姓名：{student_names}\n"
+                                                    f"💰 實繳總額：{total_amount:,} 元\n"
+                                                    f"📝 匯款後五碼：{five_digits.strip()}\n"
+                                                    f"⏰ 回報時間：{tw_time}"
+                                                )
+                                                line_payload = {
+                                                    "to": line_user_id,
+                                                    "messages": [{"type": "text", "text": line_message}]
+                                                }
+                                                requests.post(line_url, headers=line_headers, json=line_payload)
+                                            except Exception as line_err:
+                                                pass
                                             
                                         st.success("🎉 回報成功！已為您寫入系統，行政人員將會盡快為您對帳。")
                                         st.cache_data.clear()
