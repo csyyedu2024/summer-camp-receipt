@@ -46,7 +46,7 @@ st.markdown("---")
 # 2. 連線 Google Sheet 與讀取資料
 # ==========================
 # ⚠️ 【重要】請將下方替換成您總表「真實的網址」(帶有 /edit 的那串)
-SHEET_URL = "⚠️請將這段文字替換成您真實的Google總表網址⚠️"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1d1H1ofnf2NS0EJf5eaDH6XrmPT0k9tvk_7jwKjlPUtE/edit?resourcekey=&gid=56127787#gid=56127787"
 
 @st.cache_resource
 def get_gspread_client():
