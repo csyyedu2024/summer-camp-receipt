@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import gspread
-# 【新增】匯入時間工具
 from datetime import datetime, timedelta
 
 # ==========================
@@ -47,7 +46,7 @@ st.markdown("---")
 # 2. 連線 Google Sheet 與讀取資料
 # ==========================
 # ⚠️ 【重要】請將下方替換成您總表「真實的網址」(帶有 /edit 的那串)
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1d1H1ofnf2NS0EJf5eaDH6XrmPT0k9tvk_7jwKjlPUtE/edit?resourcekey=&gid=56127787#gid=56127787"
+SHEET_URL = "⚠️請將這段文字替換成您真實的Google總表網址⚠️"
 
 @st.cache_resource
 def get_gspread_client():
@@ -79,7 +78,11 @@ def load_data():
         if '實繳金額' in df.columns:
             df['實繳金額'] = pd.to_numeric(df['實繳金額'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         
+        # 處理空值，並把繳費狀態的「無」變成「待繳費」
         df = df.replace(["", "nan", "NaN", "None"], "無")
+        if '繳費狀態' in df.columns:
+            df['繳費狀態'] = df['繳費狀態'].replace("無", "待繳費")
+            
         for col in df.columns:
             if df[col].dtype == 'object' and col != '真實列數':
                 df[col] = df[col].astype(str).str.replace('$', '＄')
@@ -129,7 +132,22 @@ if not df.empty:
                     table_html += f"<td style='padding: 10px; text-align: center;'>{int(row['應繳金額']):,}</td>"
                     table_html += f"<td style='padding: 10px;'>{row['優惠內容']}</td>"
                     table_html += f"<td style='padding: 10px; text-align: center;'>{int(row['實繳金額']):,}</td>"
-                    table_html += f"<td style='padding: 10px; text-align: center;'>{row['繳費狀態']}</td>"
+                    
+                    # 【新增】顏色標籤邏輯判斷
+                    status = str(row['繳費狀態'])
+                    if "待繳費" in status:
+                        # 紅色系標籤
+                        status_html = f"<span style='color: #D32F2F; font-weight: bold; background-color: #FDECEA; padding: 6px 10px; border-radius: 6px; display: inline-block;'>{status}</span>"
+                    elif "待確認" in status:
+                        # 橘黃色系標籤
+                        status_html = f"<span style='color: #E68A00; font-weight: bold; background-color: #FFF4E5; padding: 6px 10px; border-radius: 6px; display: inline-block;'>{status}</span>"
+                    elif "已繳費" in status:
+                        # 綠色系標籤
+                        status_html = f"<span style='color: #2E7D32; font-weight: bold; background-color: #E8F5E9; padding: 6px 10px; border-radius: 6px; display: inline-block;'>{status}</span>"
+                    else:
+                        status_html = status
+                        
+                    table_html += f"<td style='padding: 10px; text-align: center; white-space: nowrap;'>{status_html}</td>"
                     table_html += "</tr>"
                 table_html += "</table>"
                 
@@ -191,21 +209,22 @@ if not df.empty:
                                     sheet_headers = ws.row_values(1)
                                     clean_headers = [str(h).strip() for h in sheet_headers]
                                     
-                                    # 【新增防護】檢查兩個欄位是不是都準備好了
-                                    if "匯款後五碼" not in clean_headers or "回報時間" not in clean_headers:
-                                        st.error("⚠️ 寫入失敗！請確認總表第一列有「匯款後五碼」和「回報時間」這兩個標題。")
+                                    # 檢查三個欄位是不是都準備好了
+                                    if "匯款後五碼" not in clean_headers or "回報時間" not in clean_headers or "繳費狀態" not in clean_headers:
+                                        st.error("⚠️ 寫入失敗！請確認總表第一列有「匯款後五碼」、「回報時間」及「繳費狀態」這三個標題。")
                                     else:
                                         col_idx_5digits = clean_headers.index("匯款後五碼") + 1
                                         col_idx_time = clean_headers.index("回報時間") + 1
-                                        rows_to_update = user_data['真實列數'].tolist()
+                                        col_idx_status = clean_headers.index("繳費狀態") + 1 # 找到繳費狀態欄位
                                         
-                                        # 【新增】抓取當下的台灣時間 (UTC+8)
+                                        rows_to_update = user_data['真實列數'].tolist()
                                         tw_time = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
                                         
-                                        # 依序寫入兩個欄位
+                                        # 依序寫入三個欄位 (後五碼、時間、把狀態改成待確認)
                                         for r in rows_to_update:
                                             ws.update_cell(r, col_idx_5digits, f"'{five_digits.strip()}")
                                             ws.update_cell(r, col_idx_time, tw_time)
+                                            ws.update_cell(r, col_idx_status, "待確認")
                                             
                                         st.success("🎉 回報成功！已為您寫入系統，行政人員將會盡快為您對帳。")
                                         st.cache_data.clear()
