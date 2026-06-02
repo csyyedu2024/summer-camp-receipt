@@ -33,6 +33,14 @@ st.markdown(
         font-size: 20px !important;
         font-weight: bold !important;
     }
+    /* 隱藏預設的滾動條，讓手機滑動更順暢美觀 */
+    ::-webkit-scrollbar {
+        height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #C4D1DE; 
+        border-radius: 10px;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -78,7 +86,6 @@ def load_data():
         if '實繳金額' in df.columns:
             df['實繳金額'] = pd.to_numeric(df['實繳金額'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         
-        # 處理空值，並把繳費狀態的「無」變成「待繳費」
         df = df.replace(["", "nan", "NaN", "None"], "無")
         if '繳費狀態' in df.columns:
             df['繳費狀態'] = df['繳費狀態'].replace("無", "待繳費")
@@ -115,12 +122,14 @@ if not df.empty:
                 
                 display_df = user_data[['學生姓名', '營隊名稱', '應繳金額', '優惠內容', '實繳金額', '繳費狀態']]
                 
-                table_html = "<table style='width:100%; border-collapse: collapse; text-align: left; font-size: 14px; margin-top: 15px;'>"
+                # 【排版優化】加上 overflow-x: auto 讓手機可以左右滑動，並設定 min-width 確保文字不會被壓扁
+                table_html = "<div style='overflow-x: auto; padding-bottom: 10px; margin-top: 15px;'>"
+                table_html += "<table style='width:100%; min-width: 650px; border-collapse: collapse; text-align: left; font-size: 14px;'>"
                 table_html += "<tr style='background-color: #EAEFF3; color: #485C6E; border-bottom: 2px solid #7B90A7;'>"
                 table_html += "<th style='padding: 10px; white-space: nowrap;'>學生姓名</th>"
-                table_html += "<th style='padding: 10px;'>營隊名稱</th>"
+                table_html += "<th style='padding: 10px; min-width: 200px;'>營隊名稱</th>"
                 table_html += "<th style='padding: 10px; white-space: nowrap; text-align: center;'>應繳<br>金額</th>"
-                table_html += "<th style='padding: 10px;'>優惠內容</th>"
+                table_html += "<th style='padding: 10px; min-width: 150px;'>優惠內容</th>"
                 table_html += "<th style='padding: 10px; white-space: nowrap; text-align: center;'>實繳<br>金額</th>"
                 table_html += "<th style='padding: 10px; white-space: nowrap; text-align: center;'>繳費<br>狀態</th>"
                 table_html += "</tr>"
@@ -133,23 +142,19 @@ if not df.empty:
                     table_html += f"<td style='padding: 10px;'>{row['優惠內容']}</td>"
                     table_html += f"<td style='padding: 10px; text-align: center;'>{int(row['實繳金額']):,}</td>"
                     
-                    # 【新增】顏色標籤邏輯判斷
                     status = str(row['繳費狀態'])
                     if "待繳費" in status:
-                        # 紅色系標籤
                         status_html = f"<span style='color: #D32F2F; font-weight: bold; background-color: #FDECEA; padding: 6px 10px; border-radius: 6px; display: inline-block;'>{status}</span>"
                     elif "待確認" in status:
-                        # 橘黃色系標籤
                         status_html = f"<span style='color: #E68A00; font-weight: bold; background-color: #FFF4E5; padding: 6px 10px; border-radius: 6px; display: inline-block;'>{status}</span>"
                     elif "已繳費" in status:
-                        # 綠色系標籤
                         status_html = f"<span style='color: #2E7D32; font-weight: bold; background-color: #E8F5E9; padding: 6px 10px; border-radius: 6px; display: inline-block;'>{status}</span>"
                     else:
                         status_html = status
                         
                     table_html += f"<td style='padding: 10px; text-align: center; white-space: nowrap;'>{status_html}</td>"
                     table_html += "</tr>"
-                table_html += "</table>"
+                table_html += "</table></div>"
                 
                 receipt_html = f"""
 <div style="max-width: 800px; margin: auto; border: 1px solid #7B90A7; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #FFFFFF; overflow: hidden; margin-bottom: 20px;">
@@ -168,6 +173,7 @@ if not df.empty:
             </div>
         </div>
         <h4 style="color: #485C6E; border-left: 4px solid #7B90A7; padding-left: 10px; margin-bottom: 10px;">📋 報名明細</h4>
+        <p style="font-size: 12px; color: #888; margin-top: -5px; margin-bottom: 5px;">👈 若表格太寬，可左右滑動查看 👉</p>
         {table_html}
         <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #7B90A7; text-align: right;">
             <span style="font-size: 16px; color: #555;">總計實繳金額：</span>
@@ -209,18 +215,16 @@ if not df.empty:
                                     sheet_headers = ws.row_values(1)
                                     clean_headers = [str(h).strip() for h in sheet_headers]
                                     
-                                    # 檢查三個欄位是不是都準備好了
                                     if "匯款後五碼" not in clean_headers or "回報時間" not in clean_headers or "繳費狀態" not in clean_headers:
                                         st.error("⚠️ 寫入失敗！請確認總表第一列有「匯款後五碼」、「回報時間」及「繳費狀態」這三個標題。")
                                     else:
                                         col_idx_5digits = clean_headers.index("匯款後五碼") + 1
                                         col_idx_time = clean_headers.index("回報時間") + 1
-                                        col_idx_status = clean_headers.index("繳費狀態") + 1 # 找到繳費狀態欄位
+                                        col_idx_status = clean_headers.index("繳費狀態") + 1
                                         
                                         rows_to_update = user_data['真實列數'].tolist()
                                         tw_time = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
                                         
-                                        # 依序寫入三個欄位 (後五碼、時間、把狀態改成待確認)
                                         for r in rows_to_update:
                                             ws.update_cell(r, col_idx_5digits, f"'{five_digits.strip()}")
                                             ws.update_cell(r, col_idx_time, tw_time)
